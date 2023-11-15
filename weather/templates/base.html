@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dynamic HTML Table</title>
+</head>
+<body>
+    <h1>Dynamic Table</h1>
+    <table border="1" id="data-table">
+        <tr>
+            <th>stn</th>
+            <th>sdate</th>
+            <th>RRR</th>
+            <th>Tmax</th>
+            <th>T2</th>
+            <th>soil_temp_mean</th>
+            <th>RH</th>
+            <th>AH</th>
+            <th>ff</th>
+            <th>dirn</th>
+            <th>dp</th>
+        </tr>
+    </table>
+    <script>
+        const currentDate = new Date();
+
+        const currentDateTimeString = currentDate.toString();
+
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // Month is 0-based.
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+
+        const hours = String(currentDate.getHours()).padStart(2, '0');
+        const minutes = String(currentDate.getMinutes()).padStart(2, '0');
+        const seconds = String(currentDate.getSeconds()).padStart(2, '0');
+        getDate()
+        function getDate(){
+            const todayDate = new Date();
+
+            const currentDateTimeString = todayDate.toString();
+
+            const year = todayDate.getFullYear();
+            const month = String(todayDate.getMonth() + 1).padStart(2, '0'); // Month is 0-based.
+            const day = String(todayDate.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+
+            const hours = String(todayDate.getHours()).padStart(2, '0');
+            const minutes = String(todayDate.getMinutes()).padStart(2, '0');
+            const seconds = String(todayDate.getSeconds()).padStart(2, '0');
+
+            let endDate = ""
+            let endActualDate = new Date(year, month-1, day, hours, minutes, seconds)
+            if(hours>=11){
+                //endActualDate.setDate(endActualDate.getDate() - 1)
+                endDate = endActualDate.toISOString().slice(0, 10).replace(/-/g, '');
+                console.log(endActualDate)
+            } else {
+                endActualDate.setDate(endActualDate.getDate() - 1)
+                endDate = endActualDate.toISOString().slice(0, 10).replace(/-/g, '');
+                console.log("here2")
+            }
+            let startDate = '20231001'
+            const startYear = parseInt(startDate.slice(0, 4), 10);
+            const startMonth = parseInt(startDate.slice(4, 6), 10);
+            const startDay = parseInt(startDate.slice(6, 8), 10);
+
+            const endYear = parseInt(endDate.slice(0, 4), 10);
+            const endMonth = parseInt(endDate.slice(4, 6), 10);
+            const endDay = parseInt(endDate.slice(6, 8), 10);
+            let currentDate = new Date(startYear, startMonth - 1, startDay);
+            while (currentDate < new Date(endYear, endMonth - 1, endDay)) {
+                currentDate.setDate(currentDate.getDate() + 1);
+                const formattedDate = currentDate.toISOString().slice(0, 10).replace(/-/g, '');
+                endpoint = 'http://ecodata.kz:5001/meteo?sdate='+formattedDate
+            fetch(endpoint, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+            
+                const filteredData = data.filter(item => [35082, 35394, 36001, 36003].includes(item.stn));
+                
+                const table = document.getElementById('data-table');
+                filteredData.forEach(item => {
+                    // fetch("/weather/add_data_to_excel/", {
+                    //     method: 'POST',
+                    //     headers: {
+                    //     'Content-Type': 'application/json',
+                    //     },
+                    //     body: JSON.stringify(item)
+                    // }).then(response => {
+                    //     if (!response.ok) {
+                    //         throw new Error('Network response was not ok');
+                    //     }
+                    //     return response.json();
+                    // })
+                    const row = table.insertRow(-1); // -1 to append a row at the end
+                    const cellStn = row.insertCell(0);
+                    const cellSdate = row.insertCell(1);
+                    const cellRRR = row.insertCell(2);
+                    const cellTmax = row.insertCell(3);
+                    const cellT2 = row.insertCell(4);
+                    const cellSoilTempMean = row.insertCell(5);
+                    const cellRH = row.insertCell(6);
+                    const cellAH = row.insertCell(7);
+                    const cellFF = row.insertCell(8);
+                    const cellDirn = row.insertCell(9);
+                    const cellDP = row.insertCell(10);
+
+                    cellStn.textContent = item.stn;
+                    cellSdate.textContent = item.sdate;
+                    cellRRR.textContent = item.RRR;
+                    cellTmax.textContent = item.Tmax;
+                    cellT2.textContent = item.T2;
+                    cellSoilTempMean.textContent = item.soil_temp_mean;
+                    cellRH.textContent = item.RH;
+                    cellAH.textContent = item.AH;
+                    cellFF.textContent = item.ff;
+                    cellDirn.textContent = item.dirn;
+                    cellDP.textContent = item.dp;
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+            
+        }
+            
+            
+        }
+        function scheduleGetRequest() {
+            const now = new Date();
+            const targetTime = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate(),
+                11, // Hour
+                0,  // Minutes
+                0   // Seconds
+            );
+
+            // Calculate the time difference until the next 11:00 AM
+            let delay = targetTime - now;
+            if (delay < 0) {
+                // If the target time has already passed today, set it for tomorrow
+                delay = 24 * 60 * 60 * 1000; // 24 hours
+            }
+
+            // Schedule the GET request
+            setTimeout(() => {
+                getDate(); 
+                setInterval(getDate, 24 * 60 * 60 * 1000); // 24 hours
+            }, delay);
+        }
+    </script>
+</body>
+</html>
